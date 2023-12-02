@@ -62,6 +62,53 @@ pub fn day1_part2(inp: &str) -> u32 {
         .sum();
 }
 
+pub fn day2_part1(inp: &str) -> usize {
+    return inp
+        .lines()
+        .enumerate()
+        .filter(|(_, line)| {
+            let i = line.find(": ").unwrap() + ": ".len();
+            return (&line[i..]).split("; ").all(|sub_game| {
+                return sub_game.split(", ").all(|num_and_colour| {
+                    let num: u32 = num_and_colour.split(" ").nth(0).unwrap().parse().unwrap();
+                    let colour = num_and_colour.split(" ").nth(1).unwrap();
+                    return match colour {
+                        "red" => num <= 12,
+                        "green" => num <= 13,
+                        "blue" => num <= 14,
+                        other => panic!("Unexpected colour: {}", other),
+                    };
+                });
+            });
+        })
+        .map(|(i, _)| i + 1)
+        .sum();
+}
+
+pub fn day2_part2(inp: &str) -> u32 {
+    return inp
+        .lines()
+        .map(|line| {
+            let i = line.find(": ").unwrap() + ": ".len();
+            let nums = (&line[i..]).split("; ").fold((0, 0, 0), |acc, sub_game| {
+                return sub_game
+                    .split(", ")
+                    .fold(acc, |(red, green, blue), num_and_colour| {
+                        let num: u32 = num_and_colour.split(" ").nth(0).unwrap().parse().unwrap();
+                        let colour = num_and_colour.split(" ").nth(1).unwrap();
+                        return match colour {
+                            "red" => (red.max(num), green, blue),
+                            "green" => (red, green.max(num), blue),
+                            "blue" => (red, green, blue.max(num)),
+                            other => panic!("Unexpected colour: {}", other),
+                        };
+                    });
+            });
+            return nums.0 * nums.1 * nums.2;
+        })
+        .sum();
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -73,5 +120,12 @@ mod tests {
         let inp = fs::read_to_string("inputs/day1.txt").unwrap();
         assert_eq!(day1_part1(&inp), 54159);
         assert_eq!(day1_part2(&inp), 53866);
+    }
+
+    #[test]
+    fn test_day2() {
+        let inp = fs::read_to_string("inputs/day2.txt").unwrap();
+        assert_eq!(day2_part1(&inp), 2348);
+        assert_eq!(day2_part2(&inp), 76008);
     }
 }
