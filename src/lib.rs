@@ -6,7 +6,7 @@ pub fn day1_part1(inp: &str) -> u32 {
             let j = line.rfind(|c: char| c.is_numeric()).unwrap();
             let ii = line.chars().nth(i).unwrap().to_digit(10).unwrap();
             let jj = line.chars().nth(j).unwrap().to_digit(10).unwrap();
-            return ii * 10 + jj;
+            ii * 10 + jj
         })
         .sum();
 }
@@ -40,7 +40,7 @@ pub fn day1_part2(inp: &str) -> u32 {
                 .iter()
                 .map(|(s, n)| {
                     let res = line.find(s).unwrap_or(usize::MAX);
-                    return (res, n);
+                    (res, n)
                 })
                 .min_by(|&(x, _), &(y, _)| x.cmp(&y))
                 .unwrap()
@@ -52,12 +52,12 @@ pub fn day1_part2(inp: &str) -> u32 {
                         .rfind(s)
                         .map(|x| i64::try_from(x).unwrap())
                         .unwrap_or(i64::MIN);
-                    return (res, n);
+                    (res, n)
                 })
                 .max_by(|&(x, _), &(y, _)| x.cmp(&y))
                 .unwrap()
                 .1;
-            return left_num * 10 + right_num;
+            left_num * 10 + right_num
         })
         .sum();
 }
@@ -68,16 +68,16 @@ pub fn day2_part1(inp: &str) -> usize {
         .enumerate()
         .filter(|(_, line)| {
             let i = line.find(": ").unwrap() + ": ".len();
-            return (&line[i..]).split("; ").all(|sub_game| {
+            return line[i..].split("; ").all(|sub_game| {
                 return sub_game.split(", ").all(|num_and_colour| {
-                    let num: u32 = num_and_colour.split(" ").nth(0).unwrap().parse().unwrap();
-                    let colour = num_and_colour.split(" ").nth(1).unwrap();
-                    return match colour {
+                    let num: u32 = num_and_colour.split(' ').next().unwrap().parse().unwrap();
+                    let colour = num_and_colour.split(' ').nth(1).unwrap();
+                    match colour {
                         "red" => num <= 12,
                         "green" => num <= 13,
                         "blue" => num <= 14,
                         other => panic!("Unexpected colour: {}", other),
-                    };
+                    }
                 });
             });
         })
@@ -90,21 +90,21 @@ pub fn day2_part2(inp: &str) -> u32 {
         .lines()
         .map(|line| {
             let i = line.find(": ").unwrap() + ": ".len();
-            let nums = (&line[i..]).split("; ").fold((0, 0, 0), |acc, sub_game| {
+            let nums = line[i..].split("; ").fold((0, 0, 0), |acc, sub_game| {
                 return sub_game
                     .split(", ")
                     .fold(acc, |(red, green, blue), num_and_colour| {
-                        let num: u32 = num_and_colour.split(" ").nth(0).unwrap().parse().unwrap();
-                        let colour = num_and_colour.split(" ").nth(1).unwrap();
-                        return match colour {
+                        let num: u32 = num_and_colour.split(' ').next().unwrap().parse().unwrap();
+                        let colour = num_and_colour.split(' ').nth(1).unwrap();
+                        match colour {
                             "red" => (red.max(num), green, blue),
                             "green" => (red, green.max(num), blue),
                             "blue" => (red, green, blue.max(num)),
                             other => panic!("Unexpected colour: {}", other),
-                        };
+                        }
                     });
             });
-            return nums.0 * nums.1 * nums.2;
+            nums.0 * nums.1 * nums.2
         })
         .sum();
 }
