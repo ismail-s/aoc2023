@@ -1,4 +1,7 @@
-use std::{collections::HashMap, ops::Not};
+use std::{
+    collections::{HashMap, HashSet},
+    ops::Not,
+};
 
 use regex::Regex;
 
@@ -227,6 +230,60 @@ pub fn day3_part2(inp: &str) -> u32 {
         .sum()
 }
 
+pub fn day4_part1(inp: &str) -> usize {
+    inp.lines()
+        .map(|line| {
+            let scratchcard = line.split_once(':').unwrap().1.split_once('|').unwrap();
+            let winning_nums = scratchcard
+                .0
+                .split_ascii_whitespace()
+                .collect::<HashSet<_>>();
+            let nums_you_have = scratchcard
+                .1
+                .split_ascii_whitespace()
+                .collect::<HashSet<_>>();
+            match winning_nums.intersection(&nums_you_have).count() {
+                0 => 0,
+                num_of_winning_nums => 1 << (num_of_winning_nums - 1),
+            }
+        })
+        .sum()
+}
+
+pub fn day4_part2(inp: &str) -> usize {
+    // Parse cards into a map from card num to (freq, matching numbers)
+    let mut card_map = inp
+        .lines()
+        .enumerate()
+        .map(|(iteration_num, line)| {
+            let scratchcard = line.split_once(':').unwrap().1.split_once('|').unwrap();
+            let winning_nums = scratchcard
+                .0
+                .split_ascii_whitespace()
+                .collect::<HashSet<_>>();
+            let nums_you_have = scratchcard
+                .1
+                .split_ascii_whitespace()
+                .collect::<HashSet<_>>();
+            let num_of_matching_nums = winning_nums.intersection(&nums_you_have).count();
+            (iteration_num + 1, (1, num_of_matching_nums))
+        })
+        .collect::<HashMap<_, _>>();
+    // Iterate through map in ascending order, modifying freq along the way
+    for iteration_num in 1..(card_map.len() + 1) {
+        let &(freq, num_of_matching_nums) = card_map.get(&iteration_num).unwrap();
+        for amount_to_get_to_next in 1..(num_of_matching_nums + 1) {
+            card_map
+                .entry(iteration_num + amount_to_get_to_next)
+                .and_modify(|c| {
+                    *c = (c.0 + freq, c.1);
+                });
+        }
+    }
+    // Return sum of all freq
+    card_map.values().map(|(freq, _)| freq).sum()
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -252,5 +309,12 @@ mod tests {
         let inp = fs::read_to_string("inputs/day3.txt").unwrap();
         assert_eq!(day3_part1(&inp), 531932);
         assert_eq!(day3_part2(&inp), 73646890);
+    }
+
+    #[test]
+    fn test_day4() {
+        let inp = fs::read_to_string("inputs/day4.txt").unwrap();
+        assert_eq!(day4_part1(&inp), 23750);
+        assert_eq!(day4_part2(&inp), 13261850);
     }
 }
