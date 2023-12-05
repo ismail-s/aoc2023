@@ -284,6 +284,132 @@ pub fn day4_part2(inp: &str) -> usize {
     card_map.values().map(|(freq, _)| freq).sum()
 }
 
+pub fn day5_part1(inp: &str) -> u64 {
+    // parse seeds as vec and maps as Vec<(u64, u64, u64)>
+    let seeds = inp
+        .lines()
+        .next()
+        .unwrap()
+        .split_once(": ")
+        .unwrap()
+        .1
+        .split(' ')
+        .map(|s| s.parse().unwrap())
+        .collect::<Vec<u64>>();
+    let maps = inp
+        .split("\n\n")
+        .skip(1)
+        .map(|map_str| {
+            map_str
+                .lines()
+                .skip(1)
+                .map(|map_line| {
+                    let nums = map_line
+                        .split(' ')
+                        .map(|s| s.parse().unwrap())
+                        .collect::<Vec<u64>>();
+                    (nums[0], nums[1], nums[2])
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    // for each seed:
+    seeds
+        .iter()
+        .map(|&seed| {
+            // run it through each map
+            maps.iter()
+                .fold(seed, |acc, map| {
+                    map.iter()
+                        .filter_map(|&(dest_range_start, source_range_start, range_len)| {
+                            if (source_range_start..(source_range_start + range_len)).contains(&acc)
+                            {
+                                Some(dest_range_start + (acc - source_range_start))
+                            } else {
+                                None
+                            }
+                        })
+                        .next()
+                        .unwrap_or(acc)
+                })
+        })
+        // find the min final value
+        .min()
+        .unwrap()
+}
+
+pub fn day5_part2(inp: &str) -> u64 {
+    // parse seeds as vec and maps as Vec<(u64, u64, u64)>
+    let first_line = inp
+        .lines()
+        .next()
+        .unwrap()
+        .split_once(": ")
+        .unwrap()
+        .1
+        .split(' ')
+        .map(|s| s.parse().unwrap())
+        .collect::<Vec<u64>>();
+    let maps = inp
+        .split("\n\n")
+        .skip(1)
+        .map(|map_str| {
+            map_str
+                .lines()
+                .skip(1)
+                .map(|map_line| {
+                    let nums = map_line
+                        .split(' ')
+                        .map(|s| s.parse().unwrap())
+                        .collect::<Vec<u64>>();
+                    (nums[0], nums[1], nums[2])
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+
+    let nums = first_line;
+    let x = nums
+        .iter()
+        .enumerate()
+        .filter(|(n, _)| n % 2 == 0)
+        .map(|(_, v)| v);
+    let y = nums
+        .iter()
+        .enumerate()
+        .filter(|(n, _)| n % 2 == 1)
+        .map(|(_, v)| v);
+    let seeds_iter = x
+        .zip(y)
+        .flat_map(|(&start, &length)| start..(start + length));
+    // for each seed:
+    seeds_iter
+        .enumerate()
+        .map(|(n, seed)| {
+            if n % 100_000_000 == 0 {
+                println!("On iteration {}", n);
+            }
+            // run it through each map
+            maps.iter()
+                .fold(seed, |acc, map| {
+                    map.iter()
+                        .filter_map(|&(dest_range_start, source_range_start, range_len)| {
+                            if (source_range_start..(source_range_start + range_len)).contains(&acc)
+                            {
+                                Some(dest_range_start + (acc - source_range_start))
+                            } else {
+                                None
+                            }
+                        })
+                        .next()
+                        .unwrap_or(acc)
+                })
+        })
+        // find the min final value
+        .min()
+        .unwrap()
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -316,5 +442,12 @@ mod tests {
         let inp = fs::read_to_string("inputs/day4.txt").unwrap();
         assert_eq!(day4_part1(&inp), 23750);
         assert_eq!(day4_part2(&inp), 13261850);
+    }
+
+    #[test]
+    fn test_day5() {
+        let inp = fs::read_to_string("inputs/day5.txt").unwrap();
+        assert_eq!(day5_part1(&inp), 389056265);
+        assert_eq!(day5_part2(&inp), 137516820);
     }
 }
