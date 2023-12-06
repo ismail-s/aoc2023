@@ -318,20 +318,18 @@ pub fn day5_part1(inp: &str) -> u64 {
         .iter()
         .map(|&seed| {
             // run it through each map
-            maps.iter()
-                .fold(seed, |acc, map| {
-                    map.iter()
-                        .filter_map(|&(dest_range_start, source_range_start, range_len)| {
-                            if (source_range_start..(source_range_start + range_len)).contains(&acc)
-                            {
-                                Some(dest_range_start + (acc - source_range_start))
-                            } else {
-                                None
-                            }
-                        })
-                        .next()
-                        .unwrap_or(acc)
-                })
+            maps.iter().fold(seed, |acc, map| {
+                map.iter()
+                    .filter_map(|&(dest_range_start, source_range_start, range_len)| {
+                        if (source_range_start..(source_range_start + range_len)).contains(&acc) {
+                            Some(dest_range_start + (acc - source_range_start))
+                        } else {
+                            None
+                        }
+                    })
+                    .next()
+                    .unwrap_or(acc)
+            })
         })
         // find the min final value
         .min()
@@ -390,24 +388,104 @@ pub fn day5_part2(inp: &str) -> u64 {
                 println!("On iteration {}", n);
             }
             // run it through each map
-            maps.iter()
-                .fold(seed, |acc, map| {
-                    map.iter()
-                        .filter_map(|&(dest_range_start, source_range_start, range_len)| {
-                            if (source_range_start..(source_range_start + range_len)).contains(&acc)
-                            {
-                                Some(dest_range_start + (acc - source_range_start))
-                            } else {
-                                None
-                            }
-                        })
-                        .next()
-                        .unwrap_or(acc)
-                })
+            maps.iter().fold(seed, |acc, map| {
+                map.iter()
+                    .filter_map(|&(dest_range_start, source_range_start, range_len)| {
+                        if (source_range_start..(source_range_start + range_len)).contains(&acc) {
+                            Some(dest_range_start + (acc - source_range_start))
+                        } else {
+                            None
+                        }
+                    })
+                    .next()
+                    .unwrap_or(acc)
+            })
         })
         // find the min final value
         .min()
         .unwrap()
+}
+
+pub fn day6_part1(inp: &str) -> usize {
+    let times = inp
+        .lines()
+        .next()
+        .unwrap()
+        .split_once(':')
+        .unwrap()
+        .1
+        .split_ascii_whitespace()
+        .map(|s| s.parse::<f64>().unwrap());
+    let distances = inp
+        .lines()
+        .nth(1)
+        .unwrap()
+        .split_once(':')
+        .unwrap()
+        .1
+        .split_ascii_whitespace()
+        .map(|s| s.parse::<f64>().unwrap());
+    times
+        .zip(distances)
+        .map(|(t, d)| {
+            let min_num = (t - f64::sqrt(t.powf(2.0) - 4.0 * d)) / 2_f64;
+            let max_num = (t + f64::sqrt(t.powf(2.0) - 4.0 * d)) / 2_f64;
+            let min_actual_num = if min_num.ceil() == min_num {
+                min_num + 1.0
+            } else {
+                min_num.ceil()
+            };
+            let max_actual_num = if max_num.floor() == max_num {
+                max_num - 1.0
+            } else {
+                max_num.floor()
+            };
+            let nums = (min_actual_num as u64)..((max_actual_num as u64) + 1);
+            println!("t {} d {} {:?}", t, d, nums);
+            nums.count()
+        })
+        .product()
+}
+
+pub fn day6_part2(inp: &str) -> usize {
+    let t = inp
+        .lines()
+        .next()
+        .unwrap()
+        .split_once(':')
+        .unwrap()
+        .1
+        .split_ascii_whitespace()
+        .collect::<String>()
+        .parse::<f64>()
+        .unwrap();
+    let d = inp
+        .lines()
+        .nth(1)
+        .unwrap()
+        .split_once(':')
+        .unwrap()
+        .1
+        .split_ascii_whitespace()
+        .collect::<String>()
+        .parse::<f64>()
+        .unwrap();
+
+    let min_num = (t - f64::sqrt(t.powf(2.0) - 4.0 * d)) / 2_f64;
+    let max_num = (t + f64::sqrt(t.powf(2.0) - 4.0 * d)) / 2_f64;
+    let min_actual_num = if min_num.ceil() == min_num {
+        min_num + 1.0
+    } else {
+        min_num.ceil()
+    };
+    let max_actual_num = if max_num.floor() == max_num {
+        max_num - 1.0
+    } else {
+        max_num.floor()
+    };
+    let nums = (min_actual_num as u64)..((max_actual_num as u64) + 1);
+    println!("t {} d {} {:?}", t, d, nums);
+    nums.count()
 }
 
 #[cfg(test)]
@@ -449,5 +527,12 @@ mod tests {
         let inp = fs::read_to_string("inputs/day5.txt").unwrap();
         assert_eq!(day5_part1(&inp), 389056265);
         assert_eq!(day5_part2(&inp), 137516820);
+    }
+
+    #[test]
+    fn test_day6() {
+        let inp = fs::read_to_string("inputs/day6.txt").unwrap();
+        assert_eq!(day6_part1(&inp), 1660968);
+        assert_eq!(day6_part2(&inp), 26499773);
     }
 }
