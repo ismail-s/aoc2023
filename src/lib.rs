@@ -1,8 +1,11 @@
 use std::{
+    cmp::Ordering,
     collections::{HashMap, HashSet},
     ops::Not,
+    str::FromStr,
 };
 
+use counter::Counter;
 use regex::Regex;
 
 pub fn day1_part1(inp: &str) -> u32 {
@@ -488,6 +491,243 @@ pub fn day6_part2(inp: &str) -> usize {
     nums.count()
 }
 
+#[derive(Eq, PartialEq, PartialOrd, Ord)]
+enum Day7Part1HandType {
+    HighCard,
+    OnePair,
+    TwoPair,
+    ThreeOfAKind,
+    FullHouse,
+    FourOfAKind,
+    FiveOfAKind,
+}
+
+impl FromStr for Day7Part1HandType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let hand_counts = s
+            .chars()
+            .collect::<Counter<_>>()
+            .most_common()
+            .into_iter()
+            .map(|(_, freq)| freq)
+            .collect::<Vec<_>>();
+        Ok(match hand_counts[..] {
+            [5] => Day7Part1HandType::FiveOfAKind,
+            [4, 1] => Day7Part1HandType::FourOfAKind,
+            [3, 2] => Day7Part1HandType::FullHouse,
+            [3, 1, 1] => Day7Part1HandType::ThreeOfAKind,
+            [2, 2, 1] => Day7Part1HandType::TwoPair,
+            [2, 1, 1, 1] => Day7Part1HandType::OnePair,
+            [1, 1, 1, 1, 1] => Day7Part1HandType::HighCard,
+            _ => panic!("Unexpected hand type"),
+        })
+    }
+}
+
+#[derive(Eq, PartialEq, PartialOrd, Ord)]
+enum Day7Part2HandType {
+    HighCard,
+    OnePair,
+    TwoPair,
+    ThreeOfAKind,
+    FullHouse,
+    FourOfAKind,
+    FiveOfAKind,
+}
+
+impl FromStr for Day7Part2HandType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut hand_counts = s
+            .chars()
+            .filter(|&c| c != 'J')
+            .collect::<Counter<_>>()
+            .most_common()
+            .into_iter()
+            .map(|(_, freq)| freq)
+            .collect::<Vec<_>>();
+        let num_of_jokers = s.chars().filter(|&c| c == 'J').count();
+        if hand_counts.is_empty() {
+            hand_counts = vec![num_of_jokers];
+        } else {
+            *(hand_counts.get_mut(0).unwrap()) += num_of_jokers;
+        }
+        Ok(match hand_counts[..] {
+            [5] => Day7Part2HandType::FiveOfAKind,
+            [4, 1] => Day7Part2HandType::FourOfAKind,
+            [3, 2] => Day7Part2HandType::FullHouse,
+            [3, 1, 1] => Day7Part2HandType::ThreeOfAKind,
+            [2, 2, 1] => Day7Part2HandType::TwoPair,
+            [2, 1, 1, 1] => Day7Part2HandType::OnePair,
+            [1, 1, 1, 1, 1] => Day7Part2HandType::HighCard,
+            _ => panic!("Unexpected hand type"),
+        })
+    }
+}
+
+#[derive(PartialEq, Eq)]
+struct Day7Part1HandAndType {
+    hand: String,
+    hand_type: Day7Part1HandType,
+}
+
+impl FromStr for Day7Part1HandAndType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Day7Part1HandAndType {
+            hand: s.to_owned(),
+            hand_type: s.parse::<Day7Part1HandType>().unwrap(),
+        })
+    }
+}
+
+impl Ord for Day7Part1HandAndType {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.hand_type.cmp(&other.hand_type) {
+            Ordering::Equal => day7_part1_secondary_compare_hands(&self.hand, &other.hand),
+            other => other,
+        }
+    }
+}
+
+impl PartialOrd for Day7Part1HandAndType {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+fn day7_part1_secondary_compare_hands(a: &str, b: &str) -> Ordering {
+    let card_order = "23456789TJQKA";
+    for (aa, bb) in a.chars().zip(b.chars()) {
+        match card_order
+            .find(aa)
+            .unwrap()
+            .cmp(&card_order.find(bb).unwrap())
+        {
+            Ordering::Equal => continue,
+            other => return other,
+        }
+    }
+    panic!("Hands are equal. Maybe this is expected. But panicking for now.");
+}
+
+#[derive(PartialEq, Eq)]
+struct Day7Part2HandAndType {
+    hand: String,
+    hand_type: Day7Part2HandType,
+}
+
+impl FromStr for Day7Part2HandAndType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Day7Part2HandAndType {
+            hand: s.to_owned(),
+            hand_type: s.parse::<Day7Part2HandType>().unwrap(),
+        })
+    }
+}
+
+impl Ord for Day7Part2HandAndType {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.hand_type.cmp(&other.hand_type) {
+            Ordering::Equal => day7_part2_secondary_compare_hands(&self.hand, &other.hand),
+            other => other,
+        }
+    }
+}
+
+impl PartialOrd for Day7Part2HandAndType {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+fn day7_part2_secondary_compare_hands(a: &str, b: &str) -> Ordering {
+    let card_order = "J23456789TQKA";
+    for (aa, bb) in a.chars().zip(b.chars()) {
+        match card_order
+            .find(aa)
+            .unwrap()
+            .cmp(&card_order.find(bb).unwrap())
+        {
+            Ordering::Equal => continue,
+            other => return other,
+        }
+    }
+    panic!("Hands are equal. Maybe this is expected. But panicking for now.");
+}
+
+struct Day7Part1HandAndBid {
+    hand_and_type: Day7Part1HandAndType,
+    bid: usize,
+}
+
+impl FromStr for Day7Part1HandAndBid {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (hand_str, bid_str) = s.split_once(' ').ok_or("Parsing failed")?;
+        Ok(Day7Part1HandAndBid {
+            hand_and_type: hand_str.parse::<Day7Part1HandAndType>().unwrap(),
+            bid: bid_str.parse().unwrap(),
+        })
+    }
+}
+
+struct Day7Part2HandAndBid {
+    hand_and_type: Day7Part2HandAndType,
+    bid: usize,
+}
+
+impl FromStr for Day7Part2HandAndBid {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (hand_str, bid_str) = s.split_once(' ').ok_or("Parsing failed")?;
+        Ok(Day7Part2HandAndBid {
+            hand_and_type: hand_str.parse::<Day7Part2HandAndType>().unwrap(),
+            bid: bid_str.parse().unwrap(),
+        })
+    }
+}
+
+pub fn day7_part1(inp: &str) -> usize {
+    // Parse input into list of (hand, bid)
+    let mut hand_and_bid_lst = inp
+        .lines()
+        .map(|line| line.parse::<Day7Part1HandAndBid>().unwrap())
+        .collect::<Vec<_>>();
+    // Order list by hand
+    hand_and_bid_lst.sort_unstable_by(|a, b| a.hand_and_type.cmp(&b.hand_and_type));
+    // Multiply each bid by rank and return sum
+    hand_and_bid_lst
+        .iter()
+        .enumerate()
+        .map(|(i, hand_and_bid)| (i + 1) * hand_and_bid.bid)
+        .sum()
+}
+
+pub fn day7_part2(inp: &str) -> usize {
+    // Parse input into list of (hand, bid)
+    let mut hand_and_bid_lst = inp
+        .lines()
+        .map(|line| line.parse::<Day7Part2HandAndBid>().unwrap())
+        .collect::<Vec<_>>();
+    // Order list by hand
+    hand_and_bid_lst.sort_unstable_by(|a, b| a.hand_and_type.cmp(&b.hand_and_type));
+    // Multiply each bid by rank and return sum
+    hand_and_bid_lst
+        .iter()
+        .enumerate()
+        .map(|(i, hand_and_bid)| (i + 1) * hand_and_bid.bid)
+        .sum()
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -534,5 +774,11 @@ mod tests {
         let inp = fs::read_to_string("inputs/day6.txt").unwrap();
         assert_eq!(day6_part1(&inp), 1660968);
         assert_eq!(day6_part2(&inp), 26499773);
+    }
+    #[test]
+    fn test_day7() {
+        let inp = fs::read_to_string("inputs/day7.txt").unwrap();
+        assert_eq!(day7_part1(&inp), 251545216);
+        assert_eq!(day7_part2(&inp), 250384185);
     }
 }
