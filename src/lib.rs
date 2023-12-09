@@ -846,7 +846,7 @@ pub fn day9_factorial(n: usize) -> BigRational {
 }
 
 pub fn day9_compute_coefficients(mut sequence: Vec<BigRational>) -> Vec<(BigRational, usize)> {
-    // Work out the coefficients of the quadratic equation
+    // Work out the coefficients of the polynomial equation
     let mut coefficients = vec![];
     loop {
         // Create pyramid of differences
@@ -890,7 +890,7 @@ pub fn day9_eval_coeffs_at_position(
 }
 
 pub fn day9_part1(inp: &str) -> BigInt {
-    // Parse input into Vec<Vec<Vec<Rational64>>>
+    // Parse input
     let sequences: Vec<Vec<BigRational>> = inp
         .lines()
         .map(|line| {
@@ -900,7 +900,6 @@ pub fn day9_part1(inp: &str) -> BigInt {
         })
         .collect();
     let seq_lens = sequences.iter().map(|seq| seq.len()).collect::<Vec<_>>();
-    // Map over each sequence:
     sequences
         .into_iter()
         .map(day9_compute_coefficients)
@@ -912,7 +911,7 @@ pub fn day9_part1(inp: &str) -> BigInt {
 }
 
 pub fn day9_part2(inp: &str) -> BigInt {
-    // Parse input into Vec<Vec<Vec<Rational64>>>
+    // Parse input
     let sequences: Vec<Vec<BigRational>> = inp
         .lines()
         .map(|line| {
@@ -921,7 +920,6 @@ pub fn day9_part2(inp: &str) -> BigInt {
                 .collect()
         })
         .collect();
-    // Map over each sequence:
     sequences
         .into_iter()
         .map(day9_compute_coefficients)
