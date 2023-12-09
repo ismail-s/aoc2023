@@ -6,6 +6,7 @@ use std::{
 };
 
 use counter::Counter;
+use num::Integer;
 use regex::Regex;
 
 pub fn day1_part1(inp: &str) -> u32 {
@@ -728,6 +729,90 @@ pub fn day7_part2(inp: &str) -> usize {
         .sum()
 }
 
+enum Day8Direction {
+    L,
+    R,
+}
+
+impl Day8Direction {
+    fn from_char(c: &char) -> Day8Direction {
+        match c {
+            'L' => Day8Direction::L,
+            'R' => Day8Direction::R,
+            otherwise => panic!("Unexpected char: {}", otherwise),
+        }
+    }
+}
+
+pub fn day8_part1(inp: &str) -> usize {
+    // Parse into first line (as LR) and Map<str, (str, str)>
+    let (first_str, snd_str) = inp.split_once("\n\n").unwrap();
+    let instructions = first_str.chars().map(|c| Day8Direction::from_char(&c));
+    let network = snd_str
+        .lines()
+        .map(|line| {
+            let (f, s) = line.split_once(" = ").unwrap();
+            let (s_1, s_2) = s[1..s.len() - 1].split_once(", ").unwrap();
+            (f, (s_1, s_2))
+        })
+        .collect::<HashMap<&str, (&str, &str)>>();
+    // Cycle through LR, start at AAA, count steps to ZZZ
+    let mut curr_node = "AAA";
+    for (count, instruction) in instructions.cycle().enumerate() {
+        if curr_node == "ZZZ" {
+            return count;
+        }
+        let (left, right) = network.get(curr_node).unwrap();
+        curr_node = match instruction {
+            Day8Direction::L => left,
+            Day8Direction::R => right,
+        }
+    }
+    panic!("Shouldn't get here");
+}
+
+pub fn day8_part2(inp: &str) -> u64 {
+    // Parse into first line (as LR) and Map<str, (str, str)>
+    let (first_str, snd_str) = inp.split_once("\n\n").unwrap();
+    let instructions = first_str
+        .chars()
+        .map(|c| Day8Direction::from_char(&c))
+        .collect::<Vec<_>>();
+    let network = snd_str
+        .lines()
+        .map(|line| {
+            let (f, s) = line.split_once(" = ").unwrap();
+            let (s_1, s_2) = s[1..s.len() - 1].split_once(", ").unwrap();
+            (f, (s_1, s_2))
+        })
+        .collect::<HashMap<&str, (&str, &str)>>();
+    let mut curr_nodes = snd_str
+        .lines()
+        .map(|line| line.split_once(" = ").unwrap().0)
+        .filter(|node| node.ends_with('A'))
+        .collect::<Vec<_>>();
+    // This code assumes that each node ending with A will eventually go to a unique node ending with Z.
+    // And that after that, the path will loop the same number of iterations to get back to the same Z node.
+    // I checked this held for the input we have to run the code on.
+    curr_nodes
+        .iter_mut()
+        .map(|curr_node| {
+            for (count, instruction) in instructions.iter().cycle().enumerate() {
+                if curr_node.ends_with('Z') {
+                    return count as u64;
+                }
+                let (left, right) = network.get(curr_node).unwrap();
+                *curr_node = match instruction {
+                    Day8Direction::L => left,
+                    Day8Direction::R => right,
+                }
+            }
+            panic!("Shouldn't get here");
+        })
+        .reduce(|a, b| a.lcm(&b))
+        .unwrap()
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -780,5 +865,12 @@ mod tests {
         let inp = fs::read_to_string("inputs/day7.txt").unwrap();
         assert_eq!(day7_part1(&inp), 251545216);
         assert_eq!(day7_part2(&inp), 250384185);
+    }
+
+    #[test]
+    fn test_day8() {
+        let inp = fs::read_to_string("inputs/day8.txt").unwrap();
+        assert_eq!(day8_part1(&inp), 20221);
+        assert_eq!(day8_part2(&inp), 14616363770447);
     }
 }
