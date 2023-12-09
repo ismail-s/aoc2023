@@ -6,7 +6,7 @@ use std::{
 };
 
 use counter::Counter;
-use num::Integer;
+use num::{BigInt, BigRational, FromPrimitive, Integer};
 use regex::Regex;
 
 pub fn day1_part1(inp: &str) -> u32 {
@@ -813,6 +813,122 @@ pub fn day8_part2(inp: &str) -> u64 {
         .unwrap()
 }
 
+fn day9_create_pyramid_of_differences(sequence: Vec<BigRational>) -> Vec<Vec<BigRational>> {
+    let mut pyramid = vec![sequence];
+    loop {
+        let last_seq = pyramid.last().unwrap();
+        let next_seq = last_seq
+            .iter()
+            .zip(last_seq.iter().skip(1))
+            .map(|(a, b)| b - a)
+            .collect::<Vec<_>>();
+        if next_seq
+            .iter()
+            .all(|n| n.eq(&BigRational::from_i16(0).unwrap()))
+        {
+            return pyramid;
+        } else if next_seq.len() == 1 {
+            pyramid.push(next_seq);
+            return pyramid;
+        } else {
+            pyramid.push(next_seq);
+        }
+    }
+}
+
+pub fn day9_factorial(n: usize) -> BigRational {
+    match n {
+        0 => BigRational::from_u8(1).unwrap(),
+        1 => BigRational::from_u8(1).unwrap(),
+        2 => BigRational::from_u8(2).unwrap(),
+        m => BigRational::from_i64((2..=(m as i64)).reduce(|a, b| a * b).unwrap()).unwrap(),
+    }
+}
+
+pub fn day9_compute_coefficients(mut sequence: Vec<BigRational>) -> Vec<(BigRational, usize)> {
+    // Work out the coefficients of the quadratic equation
+    let mut coefficients = vec![];
+    loop {
+        // Create pyramid of differences
+        let pyramid = day9_create_pyramid_of_differences(sequence.clone());
+        let depth = pyramid.len() - 1;
+        // Compute next coefficient
+        let next_coefficient = pyramid.last().unwrap().get(0).unwrap() / day9_factorial(depth);
+        // Modify the sequence
+        for (n, elem) in sequence.iter_mut().enumerate() {
+            *elem = elem.clone()
+                - (next_coefficient.clone()
+                    * ((BigRational::from_usize(n))
+                        .unwrap()
+                        .pow(depth.try_into().unwrap())));
+        }
+        coefficients.push((next_coefficient, depth));
+        if sequence.iter().all(|n| n.eq(&sequence[0])) {
+            if sequence[0] != BigRational::from_i8(0).unwrap() {
+                coefficients.push((sequence[0].clone(), 0));
+            }
+            return coefficients;
+        }
+    }
+}
+
+pub fn day9_eval_coeffs_at_position(
+    coefficients: &[(BigRational, usize)],
+    position: i64,
+) -> BigInt {
+    let res: BigRational = coefficients
+        .iter()
+        .map(|(coefficient, pow)| {
+            coefficient
+                * ((BigRational::from_i64(position).unwrap()).pow((*pow).try_into().unwrap()))
+        })
+        .sum();
+    if !res.is_integer() {
+        panic!("am here with non-integer next number {}", res);
+    }
+    res.to_integer()
+}
+
+pub fn day9_part1(inp: &str) -> BigInt {
+    // Parse input into Vec<Vec<Vec<Rational64>>>
+    let sequences: Vec<Vec<BigRational>> = inp
+        .lines()
+        .map(|line| {
+            line.split_ascii_whitespace()
+                .map(|s| s.parse().unwrap())
+                .collect()
+        })
+        .collect();
+    let seq_lens = sequences.iter().map(|seq| seq.len()).collect::<Vec<_>>();
+    // Map over each sequence:
+    sequences
+        .into_iter()
+        .map(day9_compute_coefficients)
+        .zip(seq_lens)
+        .map(|(coefficients, seq_len)| {
+            day9_eval_coeffs_at_position(&coefficients, seq_len.try_into().unwrap())
+        })
+        .sum()
+}
+
+pub fn day9_part2(inp: &str) -> BigInt {
+    // Parse input into Vec<Vec<Vec<Rational64>>>
+    let sequences: Vec<Vec<BigRational>> = inp
+        .lines()
+        .map(|line| {
+            line.split_ascii_whitespace()
+                .map(|s| s.parse().unwrap())
+                .collect()
+        })
+        .collect();
+    // Map over each sequence:
+    sequences
+        .into_iter()
+        .map(day9_compute_coefficients)
+        .map(|coefficients| day9_eval_coeffs_at_position(&coefficients, -1))
+        .sum()
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -872,5 +988,12 @@ mod tests {
         let inp = fs::read_to_string("inputs/day8.txt").unwrap();
         assert_eq!(day8_part1(&inp), 20221);
         assert_eq!(day8_part2(&inp), 14616363770447);
+    }
+
+    #[test]
+    fn test_day9() {
+        let inp = fs::read_to_string("inputs/day9.txt").unwrap();
+        assert_eq!(day9_part1(&inp), BigInt::from(1904165718));
+        assert_eq!(day9_part2(&inp), BigInt::from(964));
     }
 }
